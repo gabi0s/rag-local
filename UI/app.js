@@ -21,6 +21,7 @@ const stopStream = document.getElementById("stopStream");
 const toast = document.getElementById("toast");
 const connBadge = document.getElementById("connBadge");
 const ingestPill = document.getElementById("ingestPill");
+const dropzone = document.getElementById("dropzone");
 
 const clearSources = document.getElementById("clearSources");
 const openRightPanel = document.getElementById("openRightPanel");
@@ -48,10 +49,6 @@ function escapeHtml(str) {
 }
 
 function formatMessageSafe(text) {
-  // Ultra minimal formatting, safe (no HTML injection):
-  // - escape
-  // - preserve newlines
-  // - preserve spaces reasonably
   const escaped = escapeHtml(text);
   return escaped.replaceAll("\n", "<br/>");
 }
@@ -89,7 +86,6 @@ function addMessage(text, role) {
 
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  // Use HTML for line breaks but keep it safe
   bubble.innerHTML = formatMessageSafe(text);
 
   if (role === "user") {
@@ -146,14 +142,15 @@ function renderDocs(docs) {
 
   docs.forEach((doc) => {
     const li = document.createElement("li");
-    li.className = "doc-item";
+    const isIndexed = Boolean(doc.chunks);
+    li.className = isIndexed ? "doc-item" : "doc-item unindexed";
 
     const sizeKb = doc.size ? Math.max(1, Math.round(doc.size / 1024)) : null;
     const meta = doc.chunks
       ? `chunks: ${doc.chunks}`
       : sizeKb
         ? `${sizeKb} KB`
-        : "indexed only";
+        : "not indexed";
 
     li.innerHTML = `
       <span class="doc-title">${escapeHtml(doc.name)}</span>
@@ -203,7 +200,7 @@ function renderSources(sources) {
 
     const name = s.source ? String(s.source) : "source";
     const page = s.page ? `p.${s.page}` : "";
-    const extra = s.text ? String(s.text) : ""; // si ton backend fournit un extrait
+    const extra = s.text ? String(s.text) : "";
 
     li.innerHTML = `
       <div class="source-top">
@@ -289,7 +286,6 @@ function startStreaming(bubble) {
 
   return {
     append: (text) => {
-      // append text node before cursor
       cursor.before(document.createTextNode(text));
       chatBody.scrollTop = chatBody.scrollHeight;
     },
@@ -324,7 +320,6 @@ function setInputCounters() {
 async function sendMessage(text) {
   if (!text) return;
 
-  // close any previous stream
   stopActiveStream("New request");
 
   addMessage(text, "user");
@@ -381,7 +376,6 @@ chatForm.addEventListener("submit", (event) => {
 });
 
 chatText.addEventListener("keydown", (e) => {
-  // Enter to send, Shift+Enter for newline
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     const text = (chatText.value || "").trim();
@@ -401,9 +395,32 @@ fileInput.addEventListener("change", (event) => {
   const files = event.target.files;
   if (!files || !files.length) return;
   uploadFiles(files);
-  // reset input to allow re-upload of same file name
   event.target.value = "";
 });
+
+function setDropzoneActive(active) {
+  if (!dropzone) return;
+  dropzone.classList.toggle("dragover", active);
+}
+
+if (dropzone) {
+  dropzone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    setDropzoneActive(true);
+  });
+
+  dropzone.addEventListener("dragleave", () => {
+    setDropzoneActive(false);
+  });
+
+  dropzone.addEventListener("drop", (event) => {
+    event.preventDefault();
+    setDropzoneActive(false);
+    const files = event.dataTransfer?.files;
+    if (!files || !files.length) return;
+    uploadFiles(files);
+  });
+}
 
 runIngest.addEventListener("click", runIngestJob);
 

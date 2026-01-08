@@ -9,60 +9,74 @@
 
 <body>
   <div class="app">
-    <!-- LEFT: Docs -->
-    <aside class="sidebar" aria-label="Documents">
-      <div class="brand">
-        <div class="logo" aria-hidden="true">RL</div>
-        <div class="brand-text">
-          <div class="brand-title">RAG Local</div>
-          <div class="brand-sub">Docs • Ingestion • Chat</div>
+    <!-- LEFT -->
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="sidebar-inner">
+        <div class="brand">
+          <div class="logo" aria-hidden="true">RL</div>
+          <div class="brand-text">
+            <div class="brand-title">RAG Local</div>
+            <div class="brand-sub">Docs • Ingestion • Chat</div>
+          </div>
         </div>
-      </div>
 
-      <div class="sidebar-actions">
-        <button class="btn btn-ghost" id="refreshDocs" type="button" title="Rafraîchir la liste">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M20 12a8 8 0 0 1-14.8 4.4M4 12a8 8 0 0 1 14.8-4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M20 4v6h-6M4 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-          Refresh
-        </button>
+        <div class="sidebar-actions">
+          <button class="btn btn-ghost" id="refreshDocs" type="button" title="Refresh list">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M20 12a8 8 0 0 1-14.8 4.4M4 12a8 8 0 0 1 14.8-4.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M20 4v6h-6M4 20v-6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            Refresh
+          </button>
 
-        <button class="btn btn-ghost" id="openRightPanel" type="button" title="Ouvrir le panneau (mobile)">
-          <span class="icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M5 6h14M5 12h14M5 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </span>
-          Panel
-        </button>
-      </div>
+          <button class="btn btn-ghost" id="openRightPanel" type="button" title="Open panel (mobile)">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 6h14M5 12h14M5 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+            Panel
+          </button>
+        </div>
 
-      <div class="sidebar-section-title">Documents indexés</div>
-      <ul class="doc-list" role="list" id="docList"></ul>
+        <div class="sidebar-main">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Documents</div>
+              <span class="pill pill-muted">index</span>
+            </div>
 
-      <div class="sidebar-footer">
-        <div class="hint">
-          Astuce : ajoute des fichiers dans <b>Ingestion</b>, puis lance <b>Run ingest</b>.
+            <div class="dropzone" id="dropzone" aria-label="Drop documents here">
+              Drag & drop files here
+            </div>
+
+            <ul class="doc-list" role="list" id="docList"></ul>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="hint">
+            Tip: add files in <b>Ingestion</b>, then run <b>Run ingest</b>.
+          </div>
         </div>
       </div>
     </aside>
 
-    <!-- CENTER: Chat -->
+    <!-- CENTER -->
     <main class="chat" aria-label="Chat">
       <header class="chat-header">
         <div class="chat-header-left">
           <div class="chat-title-row">
             <div class="chat-title">Assistant</div>
-            <span class="badge" id="connBadge" title="État backend">●</span>
+            <span class="badge" id="connBadge" title="Backend status">?</span>
           </div>
           <div class="chat-subtitle">Streaming + sources (RAG local)</div>
         </div>
 
         <div class="chat-header-right">
-          <button class="btn btn-ghost" id="newChat" type="button" title="Nouveau chat">
+          <button class="btn btn-ghost" id="newChat" type="button" title="New chat">
             <span class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -84,14 +98,14 @@
 
       <section class="chat-body" id="chatBody" aria-live="polite" aria-label="Messages">
         <div class="empty-state" id="emptyState">
-          <div class="empty-title">Pose une question.</div>
+          <div class="empty-title">Ask a question.</div>
           <div class="empty-sub">
-            Le modèle répond en streaming et affiche les sources utilisées à droite.
+            The model streams answers and shows sources on the right.
           </div>
           <div class="empty-chips">
-            <button class="chip" type="button" data-prompt="Résume les documents disponibles.">Résumer les docs</button>
-            <button class="chip" type="button" data-prompt="Quelles sont les sources les plus pertinentes ?">Sources pertinentes</button>
-            <button class="chip" type="button" data-prompt="Donne-moi un plan d'action pour améliorer l'ingestion.">Améliorer l’ingestion</button>
+            <button class="chip" type="button" data-prompt="Summarize the available documents.">Summarize docs</button>
+            <button class="chip" type="button" data-prompt="What are the most relevant sources?">Relevant sources</button>
+            <button class="chip" type="button" data-prompt="Give me a plan to improve ingestion.">Improve ingestion</button>
           </div>
         </div>
       </section>
@@ -101,11 +115,11 @@
           <textarea
             id="chatText"
             rows="1"
-            placeholder="Écris ton message… (Entrée pour envoyer, Shift+Entrée pour une nouvelle ligne)"
+            placeholder="Write your message... (Enter to send, Shift+Enter for newline)"
             aria-label="Message"
           ></textarea>
           <div class="input-actions">
-            <button class="btn btn-primary" type="submit" id="sendBtn" title="Envoyer">
+            <button class="btn btn-primary" type="submit" id="sendBtn" title="Send">
               <span class="icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M4 12l16-8-6 16-2-6-8-2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
@@ -116,20 +130,20 @@
           </div>
         </div>
         <div class="input-hint">
-          <span id="typingHint">Prêt.</span>
-          <span class="sep">•</span>
+          <span id="typingHint">Ready.</span>
+          <span class="sep">|</span>
           <span id="charCount">0</span>
-          <span class="muted">caractères</span>
+          <span class="muted">chars</span>
         </div>
       </form>
     </main>
 
-    <!-- RIGHT: Sources + Ingestion -->
-    <aside class="sidepanel" id="rightPanel" aria-label="Panneau latéral">
+    <!-- RIGHT -->
+    <aside class="sidepanel" id="rightPanel" aria-label="Side panel">
       <div class="panel">
         <div class="panel-head">
           <div class="panel-title">Sources</div>
-          <button class="btn btn-ghost btn-sm" id="clearSources" type="button" title="Effacer les sources">Clear</button>
+          <button class="btn btn-ghost btn-sm" id="clearSources" type="button" title="Clear sources">Clear</button>
         </div>
         <ul class="sources-list" id="sourcesList"></ul>
       </div>
@@ -141,7 +155,7 @@
         </div>
 
         <div class="field">
-          <label for="fileInput">Ajouter des documents</label>
+          <label for="fileInput">Add documents</label>
           <input id="fileInput" type="file" multiple />
         </div>
 
@@ -170,8 +184,8 @@
         <div class="status" id="ingestStatus"></div>
       </div>
 
-      <button class="panel-close btn btn-ghost" id="closeRightPanel" type="button" aria-label="Fermer le panneau">
-        Fermer
+      <button class="panel-close btn btn-ghost" id="closeRightPanel" type="button" aria-label="Close panel">
+        Close
       </button>
     </aside>
 
