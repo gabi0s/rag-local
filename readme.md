@@ -34,3 +34,8 @@ insaller le model ollama
 ```shell
 ollama pull qwen2.5:7b-instruct
 ```
+
+UI
+```http
+http://localhost:5173
+```

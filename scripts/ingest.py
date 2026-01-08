@@ -12,7 +12,7 @@ DATA_RAW = "data/raw"
 DATA_INDEX = "data/index"
 EMBED_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
-CHUNK_SIZE = 900        # en caractères (simple)
+CHUNK_SIZE = 900        # chars
 CHUNK_OVERLAP = 150
 
 @dataclass
@@ -38,7 +38,13 @@ def clean_text(t: str) -> str:
     t = " ".join(t.split())
     return t.strip()
 
-def chunk_text(text: str, source: str, page: int = None) -> List[Chunk]:
+def chunk_text(
+    text: str,
+    source: str,
+    page: int = None,
+    chunk_size: int = CHUNK_SIZE,
+    chunk_overlap: int = CHUNK_OVERLAP,
+) -> List[Chunk]:
     text = clean_text(text)
     if not text:
         return []
@@ -47,27 +53,27 @@ def chunk_text(text: str, source: str, page: int = None) -> List[Chunk]:
     start = 0
     idx = 0
     while start < len(text):
-        end = min(len(text), start + CHUNK_SIZE)
+        end = min(len(text), start + chunk_size)
         chunk = text[start:end]
         meta = {"source": source}
         if page is not None:
             meta["page"] = page
         chunks.append(Chunk(id=f"{source}:{page or 0}:{idx}", text=chunk, meta=meta))
         idx += 1
-        start = end - CHUNK_OVERLAP
+        start = end - chunk_overlap
         if start < 0:
             start = 0
         if end == len(text):
             break
     return chunks
 
-def main():
+def ingest_documents(chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP) -> int:
     os.makedirs(DATA_INDEX, exist_ok=True)
 
     paths = sorted(glob.glob(os.path.join(DATA_RAW, "**/*"), recursive=True))
     paths = [p for p in paths if os.path.isfile(p) and (p.endswith(".txt") or p.endswith(".pdf") or p.endswith(".md"))]
     if not paths:
-        raise SystemExit("Aucun fichier .txt/.md/.pdf trouvé dans data/raw")
+        raise SystemExit("No .txt/.md/.pdf files found in data/raw")
 
     all_chunks: List[Chunk] = []
 
@@ -75,12 +81,12 @@ def main():
         name = os.path.relpath(p, DATA_RAW)
         if p.endswith(".pdf"):
             for page_no, page_text in read_pdf(p):
-                all_chunks.extend(chunk_text(page_text, source=name, page=page_no))
+                all_chunks.extend(chunk_text(page_text, source=name, page=page_no, chunk_size=chunk_size, chunk_overlap=chunk_overlap))
         else:
-            all_chunks.extend(chunk_text(read_txt(p), source=name))
+            all_chunks.extend(chunk_text(read_txt(p), source=name, chunk_size=chunk_size, chunk_overlap=chunk_overlap))
 
     all_chunks = [c for c in all_chunks if len(c.text) > 40]
-    print(f"✅ Chunks créés: {len(all_chunks)}")
+    print(f"Chunks created: {len(all_chunks)}")
 
     model = SentenceTransformer(EMBED_MODEL_NAME)
     texts = [c.text for c in all_chunks]
@@ -101,7 +107,16 @@ def main():
     with open(os.path.join(DATA_INDEX, "chunks.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
 
-    print("Index écrit dans data/index (faiss.index + chunks.json)")
+    print("Index written to data/index (faiss.index + chunks.json)")
+    return len(all_chunks)
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--chunk-size", type=int, default=CHUNK_SIZE)
+    parser.add_argument("--chunk-overlap", type=int, default=CHUNK_OVERLAP)
+    args = parser.parse_args()
+    ingest_documents(chunk_size=args.chunk_size, chunk_overlap=args.chunk_overlap)
 
 if __name__ == "__main__":
     main()
