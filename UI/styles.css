@@ -314,6 +314,50 @@ body {
 
 .chat-header-right { display: inline-flex; gap: 10px; align-items: center; }
 
+.device-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--stroke);
+}
+
+.device-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  padding: 0 6px 0 4px;
+}
+
+.device-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 140ms ease, border 140ms ease, color 140ms ease, transform 120ms ease;
+}
+
+.device-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+.device-btn:active { transform: translateY(1px); }
+
+.device-btn.is-active {
+  color: rgba(0,0,0,0.82);
+  background: linear-gradient(135deg, rgba(106,228,255,0.90), rgba(138,125,255,0.90));
+  border-color: rgba(255,255,255,0.14);
+  box-shadow: var(--shadow2);
+}
+
+.device-btn:focus-visible {
+  outline: 2px solid rgba(106, 228, 255, 0.35);
+  outline-offset: 2px;
+}
+
 .badge {
   font-size: 12px;
   padding: 3px 8px;

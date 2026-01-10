@@ -27,6 +27,9 @@ const clearSources = document.getElementById("clearSources");
 const openRightPanel = document.getElementById("openRightPanel");
 const closeRightPanel = document.getElementById("closeRightPanel");
 const rightPanel = document.getElementById("rightPanel");
+const deviceButtons = Array.from(document.querySelectorAll(".device-btn"));
+
+let selectedDevice = "cpu";
 
 let activeEventSource = null;
 let isStreaming = false;
@@ -330,6 +333,7 @@ async function sendMessage(text) {
 
   const url = new URL(`${API_BASE}/api/chat/stream`);
   url.searchParams.set("question", text);
+  url.searchParams.set("device", selectedDevice);
 
   setStreaming(true);
 
@@ -456,8 +460,48 @@ document.querySelectorAll(".chip").forEach((btn) => {
 function openPanel() { rightPanel.classList.add("open"); }
 function closePanel() { rightPanel.classList.remove("open"); }
 
+async function requestShutdown() {
+  try {
+    await fetch(`${API_BASE}/api/shutdown`, { method: "POST", keepalive: true });
+  } catch {}
+}
+
+function attemptCloseTab() {
+  try {
+    window.open("", "_self");
+    window.close();
+  } catch {}
+}
+
 if (openRightPanel) openRightPanel.addEventListener("click", openPanel);
-if (closeRightPanel) closeRightPanel.addEventListener("click", closePanel);
+if (closeRightPanel) {
+  closeRightPanel.addEventListener("click", () => {
+    closePanel();
+    showToast("Shutting down...");
+    requestShutdown();
+    window.setTimeout(attemptCloseTab, 150);
+  });
+}
+
+function setDevice(device) {
+  selectedDevice = device;
+  deviceButtons.forEach((btn) => {
+    const isActive = btn.dataset.device === device;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+  showToast(`LLM: ${device.toUpperCase()}`);
+}
+
+deviceButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const device = btn.dataset.device;
+    if (!device || device === selectedDevice) return;
+    setDevice(device);
+  });
+});
+
+setDevice(selectedDevice);
 
 // Initial load
 loadDocs();

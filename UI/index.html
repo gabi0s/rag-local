@@ -76,6 +76,12 @@
         </div>
 
         <div class="chat-header-right">
+          <div class="device-toggle" role="group" aria-label="LLM device">
+            <span class="device-label">LLM</span>
+            <button class="device-btn is-active" type="button" data-device="cpu" aria-pressed="true">CPU</button>
+            <button class="device-btn" type="button" data-device="gpu" aria-pressed="false">GPU</button>
+          </div>
+
           <button class="btn btn-ghost" id="newChat" type="button" title="New chat">
             <span class="icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">

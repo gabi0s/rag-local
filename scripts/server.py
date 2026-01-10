@@ -1,6 +1,8 @@
 ﻿import os
 import json
 import time
+import threading
+import subprocess
 from typing import List, Dict, Any, Optional
 
 import numpy as np
@@ -106,10 +108,16 @@ def retrieve_contexts(question: str, top_k: int) -> List[Dict[str, Any]]:
         contexts.append(store.chunks[int(idx)])
     return contexts
 
-def stream_ollama(prompt: str):
+def stream_ollama(prompt: str, device: str):
+    options = {"num_gpu": 0} if device == "cpu" else {"num_gpu": -1}
     with requests.post(
         "http://localhost:11434/api/generate",
-        json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": True},
+        json={
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": True,
+            "options": options,
+        },
         timeout=300,
         stream=True,
     ) as r:
@@ -127,6 +135,28 @@ def sse_event(event: str, data: str) -> str:
     lines = str(data).splitlines() or [""]
     payload = "".join(f"data: {line}\n" for line in lines)
     return f"event: {event}\n{payload}\n"
+
+def _kill_window(title: str) -> None:
+    subprocess.run(
+        ['taskkill', '/FI', f"WINDOWTITLE eq {title}", '/F'],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+def _shutdown_all() -> None:
+    time.sleep(0.5)
+    _kill_window('RAG UI')
+    _kill_window('Ollama (Vulkan)')
+    _kill_window('RAG Backend')
+    subprocess.run(
+        ['taskkill', '/IM', 'ollama.exe', '/F'],
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    os._exit(0)
+
 
 class IngestRequest(BaseModel):
     chunk_size: int = CHUNK_SIZE
@@ -206,7 +236,15 @@ def ingest(req: IngestRequest):
     return {"chunks": count}
 
 @app.get("/api/chat/stream")
-def chat_stream(question: str = Query(..., min_length=1), top_k: int = TOP_K_DEFAULT):
+def chat_stream(
+    question: str = Query(..., min_length=1),
+    top_k: int = TOP_K_DEFAULT,
+    device: str = Query("cpu"),
+):
+    device = device.strip().lower()
+    if device not in {"cpu", "gpu"}:
+        raise HTTPException(status_code=400, detail="device must be cpu or gpu")
+    print(f"[chat] device={device}")
     try:
         contexts = retrieve_contexts(question, top_k)
     except FileNotFoundError as e:
@@ -215,7 +253,7 @@ def chat_stream(question: str = Query(..., min_length=1), top_k: int = TOP_K_DEF
     prompt = build_prompt(question, contexts)
 
     def event_stream():
-        for token in stream_ollama(prompt):
+        for token in stream_ollama(prompt, device):
             yield sse_event("token", token)
         sources = []
         for c in contexts:
@@ -226,6 +264,12 @@ def chat_stream(question: str = Query(..., min_length=1), top_k: int = TOP_K_DEF
         yield sse_event("done", "1")
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+@app.post('/api/shutdown')
+def shutdown():
+    print('[shutdown] requested')
+    threading.Thread(target=_shutdown_all, daemon=True).start()
+    return {'status': 'shutting down'}
 
 if __name__ == "__main__":
     import uvicorn
