@@ -19,7 +19,7 @@ python ingest.py
 ```
 
 (optionel)
-pour utiliser ollama sur mon gpu AMD RX5600XT
+pour utiliser ollama sur GPU AMD
 ```shell
 set OLLAMA_VULKAN=1
 ollama serve
